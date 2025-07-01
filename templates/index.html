@@ -1,0 +1,60 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>百家樂策略模擬器</title>
+    <style>
+        body { font-family: sans-serif; padding: 2em; max-width: 800px; margin: auto; }
+        input, select { padding: 0.3em; margin-bottom: 1em; width: 100%; }
+        button { padding: 0.5em 1em; }
+        #result p { margin: 0.5em 0; }
+    </style>
+</head>
+<body>
+    <h1>百家樂策略模擬器</h1>
+    <form id="sim-form">
+        <label>模擬局數</label><input type="number" name="rounds" value="50000" required>
+        <label>基本下注金額</label><input type="number" name="base_bet" value="10" required>
+        <label>初始資金</label><input type="number" name="initial_funds" value="1000" required>
+        <label>反水比例（0.005 = 0.5%）</label><input type="number" name="rebate_rate" step="0.0001" value="0.005" required>
+        <label>下注策略</label>
+        <select name="strategy">
+            <option value="fixed">固定</option>
+            <option value="martingale">馬丁格爾</option>
+        </select>
+        <label>下注對象</label>
+        <select name="bet_target">
+            <option value="Player">閒</option>
+            <option value="Banker">莊</option>
+            <option value="Follow">跟注</option>
+        </select>
+        <button type="submit">開始模擬</button>
+    </form>
+
+    <div id="result"></div>
+    <img id="chart" style="max-width:100%; margin-top:20px;" />
+
+    <script>
+        document.getElementById("sim-form").addEventListener("submit", async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const res = await fetch("/simulate", { method: "POST", body: formData });
+            const data = await res.json();
+            const result = data.result;
+            document.getElementById("result").innerHTML = `
+                <p>莊家勝：${result.Banker} 次</p>
+                <p>閒家勝：${result.Player} 次</p>
+                <p>和局　：${result.Tie} 次</p>
+                <p>實際下注局數：${result.actual_bets}</p>
+                <p>總押注金額：$${result.total_bet.toFixed(2)}</p>
+                <p>總派彩金額：$${result.total_payout.toFixed(2)}</p>
+                <p>總反水金額：$${result.total_rebate.toFixed(2)}</p>
+                <p>🎯 RTP（不含反水）：${result.rtp_base}</p>
+                <p>🎯 RTP（含反水）　：${result.rtp_total}</p>
+                <p>最終資金：$${result.final_balance.toFixed(2)}</p>
+            `;
+            document.getElementById("chart").src = "data:image/png;base64," + data.chart;
+        });
+    </script>
+</body>
+</html>
